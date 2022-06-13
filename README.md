@@ -7,5 +7,5 @@ Code to reproduce the results in paper "[Large-scale Stochastic Optimization of 
   title={Large-scale Stochastic Optimization of NDCG Surrogates for Deep Learning with Provable Convergence},  
   author={Qiu, Zi-Hao and Hu, Quanqi and Zhong, Yongjian and Zhang, Lijun and Yang, Tianbao},  
   journal={arXiv preprint arXiv:2202.12183},  
-  year={2022}
+  year={2022}  
 }
