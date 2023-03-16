@@ -11,7 +11,7 @@ do
                --train 0 --buffer 0 \
                --test_all 1 \
                --pretrain_model ../model/NeuMF/ml-20m_$METHOD.pt \
-               --gpu 0 --reorg_train_data 1 \
+               --gpu 0 --reorg_train_data 0 \
                --epoch 120 \
                --random_seed 0 \
                --run_name ml-20m_test_all_$METHOD
