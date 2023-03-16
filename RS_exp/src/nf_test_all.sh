@@ -11,7 +11,7 @@ do
                --train 0 --buffer 0 \
                --test_all 1 \
                --pretrain_model ../model/NeuMF/netflix_$METHOD.pt \
-               --gpu 1 --reorg_train_data 0 \
+               --gpu 1 --reorg_train_data 1 \
                --epoch 120 \
                --random_seed 0 \
                --run_name netflix_test_all_$METHOD
