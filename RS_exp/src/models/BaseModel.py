@@ -213,7 +213,7 @@ class GeneralModel(BaseModel):
         parser.add_argument('--loss_type', type=str, default='BPR',
                             choices=['RankNet', 'ListNet', 'ListMLE',
                                      'NeuralNDCG', 'ApproxNDCG', 'LambdaRank', 
-                                     'Listwise_CE', 'NDCG'],          # ours
+                                     'LambdaLoss', 'SmoothI', 'Listwise_CE', 'NDCG'],          # ours
                             help='The loss used during training.')
         parser.add_argument('--neuralndcg_temp', type=float, default=1.0,
                             help='Temp for NeuralNDCG')
@@ -246,6 +246,9 @@ class GeneralModel(BaseModel):
             self.warmup_loss = ndcg_loss.Listwise_CE_Loss(self.user_num, self.item_num, self.num_pos, self.warmup_gamma, self.eps)
         elif self.loss_type == 'NDCG':
             self.NDCG_loss = ndcg_loss.NDCG_Loss(self.user_num, self.item_num, self.num_pos, self.ndcg_gamma, k=self.ndcg_topk)
+        elif self.loss_type == 'SmoothI':
+            # tune alpha in the range of [0.1, 1, 10, 100], set delta to 0.1
+            self.smoothi_loss = losses.ListwiseSmoothINDCGKLoss(alpha=1.0, delta=0.1, K=10, rank_list_length=self.num_pos+self.num_neg, device='cuda')
 
     def loss(self, out_dict: dict, epoch: int) -> torch.Tensor:
         """
@@ -278,6 +281,11 @@ class GeneralModel(BaseModel):
             loss = losses.listmle_loss(predictions, ratings, self.device)
         elif self.loss_type == 'LambdaRank':
             loss = losses.lambda_loss(predictions, ratings, self.device, 'lambdaRank_scheme')
+        elif self.loss_type == 'LambdaLoss':
+            loss = losses.lambda_loss(predictions, ratings, self.device, 'ndcgLoss2_scheme')
+        elif self.loss_type == 'SmoothI':
+            labels = torch.cat([ratings, torch.zeros(predictions.shape[0], self.num_neg)], dim=1)
+            loss = self.smoothi_loss(predictions, labels)
         else:
             raise NotImplementedError
         return loss
