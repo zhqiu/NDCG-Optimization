@@ -11,3 +11,4 @@ from .pointwise import *  # noqa F403 F401
 from .rankNet import *  # noqa F403 F401
 from .bce import *  # noqa F403 F401
 from .NDCG_M import *
+from .SmoothI import *
