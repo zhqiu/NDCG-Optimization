@@ -284,7 +284,7 @@ class GeneralModel(BaseModel):
         elif self.loss_type == 'LambdaLoss':
             loss = losses.lambda_loss(predictions, ratings, self.device, 'ndcgLoss2_scheme')
         elif self.loss_type == 'SmoothI':
-            labels = torch.cat([ratings, torch.zeros(predictions.shape[0], self.num_neg)], dim=1)
+            labels = torch.cat([ratings, torch.zeros(predictions.shape[0], self.num_neg).to(ratings.device)], dim=1)
             loss = self.smoothi_loss(predictions, labels)
         else:
             raise NotImplementedError
