@@ -213,7 +213,8 @@ class GeneralModel(BaseModel):
         parser.add_argument('--loss_type', type=str, default='BPR',
                             choices=['RankNet', 'ListNet', 'ListMLE',
                                      'NeuralNDCG', 'ApproxNDCG', 'LambdaRank', 
-                                     'LambdaLoss', 'SmoothI', 'Listwise_CE', 'NDCG'],          # ours
+                                     'LambdaLoss', 'SmoothI', 'Listwise_CE', 'NDCG',
+                                     'Faster_NDCG_v1', 'Faster_NDCG_v2'],          # ours
                             help='The loss used during training.')
         parser.add_argument('--neuralndcg_temp', type=float, default=1.0,
                             help='Temp for NeuralNDCG')
@@ -249,8 +250,15 @@ class GeneralModel(BaseModel):
         elif self.loss_type == 'SmoothI':
             # tune alpha in the range of [0.1, 1, 10, 100], set delta to 0.1
             self.smoothi_loss = losses.ListwiseSmoothINDCGKLoss(alpha=1.0, delta=0.1, K=10, rank_list_length=self.num_pos+self.num_neg, device='cuda')
+        elif self.loss_type == 'Faster_NDCG_v1':
+            self.FNDCG_v1_loss = ndcg_loss.Faster_NDCG_v1_Loss(self.user_num, self.item_num, self.num_pos, gamma_u=0.9, gamma_s=0.9, gamma_z=0.9,
+                                                                beta_u=0.005, beta_s=0.005, beta_z=0.005)
+        elif self.loss_type == 'Faster_NDCG_v2':
+            self.FNDCG_v2_loss = ndcg_loss.Faster_NDCG_v2_Loss(self.user_num, self.item_num, self.num_pos, gamma_v=0.9, gamma_r=0.9, gamma_z=0.9,
+                                                                beta_v=0.005, beta_r=0.005, beta_z=0.005, eta1=0.4)
 
-    def loss(self, out_dict: dict, epoch: int) -> torch.Tensor:
+
+    def loss(self, out_dict: dict, epoch: int, last_g=None, last_L_lambda_hessian=None, last_grad_lambda_q=None, compute_last=False) -> torch.Tensor:
         """
         has multiple postive and nagetive samples
 
@@ -271,6 +279,10 @@ class GeneralModel(BaseModel):
             loss = self.warmup_loss(predictions, out_dict)
         elif self.loss_type == 'NDCG':
             loss = self.NDCG_loss(predictions, out_dict)
+        elif self.loss_type == 'Faster_NDCG_v1':
+            loss = self.FNDCG_v1_loss(predictions, out_dict, last_g, last_L_lambda_hessian, last_grad_lambda_q, compute_last)
+        elif self.loss_type == 'Faster_NDCG_v2':
+            loss = self.FNDCG_v2_loss(predictions, out_dict, last_g, last_L_lambda_hessian, last_grad_lambda_q, compute_last)
         elif self.loss_type == 'NeuralNDCG':
             loss = losses.neural_sort_loss(predictions, ratings, self.device, temperature=self.neuralndcg_temp)
         elif self.loss_type == 'ApproxNDCG':
@@ -284,7 +296,7 @@ class GeneralModel(BaseModel):
         elif self.loss_type == 'LambdaLoss':
             loss = losses.lambda_loss(predictions, ratings, self.device, 'ndcgLoss2_scheme')
         elif self.loss_type == 'SmoothI':
-            labels = torch.cat([ratings, torch.zeros(predictions.shape[0], self.num_neg).to(ratings.device)], dim=1)
+            labels = torch.cat([ratings, torch.zeros(predictions.shape[0], self.num_neg).cuda()], dim=1)
             loss = self.smoothi_loss(predictions, labels)
         else:
             raise NotImplementedError
