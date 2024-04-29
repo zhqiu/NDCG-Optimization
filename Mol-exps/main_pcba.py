@@ -33,7 +33,7 @@ class GraphDataset(PygGraphPropPredDataset):
 cls_criterion = torch.nn.BCEWithLogitsLoss()
 reg_criterion = torch.nn.MSELoss()
 map_criterion = meanAveragePrecisionLoss(437929, num_labels=128, margin=0.6, gamma=0.9, top_k=300)
-focal_criterion = FocalLoss(weight=0.25, gamma=2.0)
+focal_criterion = FocalLoss(alpha=0.25, gamma=2.0)
 
 LOSS_TYPE = 'CE' # CE, Focal, mAP (ours)
 
