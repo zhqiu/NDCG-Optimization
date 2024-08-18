@@ -15,6 +15,7 @@ from ogb.graphproppred import PygGraphPropPredDataset, Evaluator
 from prec_at_k import precision_at_k
 
 from prec_k_loss import ListwiseSmoothIPKLoss, Prec_at_K_Loss
+from libauc.sampler import DualSampler
 
 
 cls_criterion = torch.nn.BCEWithLogitsLoss()
@@ -139,7 +140,9 @@ def main():
     ### automatic evaluator. takes dataset name as input
     evaluator = Evaluator(args.dataset)
 
-    train_loader = DataLoader(dataset[split_idx["train"]], batch_size=args.batch_size, shuffle=True, num_workers = args.num_workers)
+    sampler = DualSampler(None, batch_size=args.batch_size, labels=labels, sampling_rate=0.5)
+
+    train_loader = DataLoader(dataset[split_idx["train"]], batch_size=args.batch_size, sampler=sampler, num_workers = args.num_workers)
     valid_loader = DataLoader(dataset[split_idx["valid"]], batch_size=args.batch_size, shuffle=False, num_workers = args.num_workers)
     test_loader = DataLoader(dataset[split_idx["test"]], batch_size=args.batch_size, shuffle=False, num_workers = args.num_workers)
 
